@@ -40,6 +40,35 @@ def verbose_option(func):
     return click.option("--verbose/--quiet", default=None, help="log level")(wrap)
 
 
+def base_option(func):
+    @click.option("--python-bin", default="python", show_default=True)
+    @click.option(
+        "--python-name",
+        default="python3",
+        help="destination binary name of python",
+        show_default=True,
+    )
+    @click.option("--name", default=Path.cwd().name, show_default=True)
+    @click.option("--compile/--no-compile", default=False, show_default=True)
+    @click.option("--zip/--no-zip", default=False, show_default=True)
+    @click.argument("args", nargs=-1)
+    @functools.wraps(func)
+    def _(*a, **kw):
+        return func(*a, **kw)
+
+    return _
+
+
+def package_option(func):
+    @click.option("--maintainer", default="Watanabe Takashi <wtnb75@gmail.com>")
+    @click.option("--version", default="0.0.1", show_default=True)
+    @functools.wraps(func)
+    def _(*a, **kw):
+        return func(*a, **kw)
+
+    return _
+
+
 def _venv(python_bin, output_dir) -> Path:
     _log.debug("make venv to %s", output_dir)
     cmdres = subprocess.run([python_bin, "-m", "venv", "--system-site-packages", output_dir])
@@ -152,19 +181,9 @@ def _tar(rootdir: Path, dest: Path, prefix: str):
 
 @cli.command()
 @verbose_option
-@click.option("--python-bin", default="python", show_default=True)
+@base_option
 @click.option("--destdir", type=click.Path(exists=True, file_okay=False, dir_okay=True))
 @click.option("--prefix", default="usr", show_default=True)
-@click.option(
-    "--python-name",
-    default="python3",
-    help="destination binary name of python",
-    show_default=True,
-)
-@click.option("--name", default="localpkg", show_default=True)
-@click.option("--compile/--no-compile", default=False, show_default=True)
-@click.option("--zip/--no-zip", default=False, show_default=True)
-@click.argument("args", nargs=-1)
 def install(python_bin, destdir, python_name, name, compile, zip, prefix, args):
     pathname = _install(
         python_bin=python_bin,
@@ -181,20 +200,8 @@ def install(python_bin, destdir, python_name, name, compile, zip, prefix, args):
 
 @cli.command()
 @verbose_option
-@click.option("--python-bin", default="python", show_default=True)
-@click.option(
-    "--python-name",
-    default="python3",
-    help="destination binary name of python",
-    show_default=True,
-)
-@click.option("--name", default="localpkg", show_default=True)
-@click.option("--version", default="0.0.1", show_default=True)
-@click.option("--maintainer", default="Watanabe Takashi <wtnb75@gmail.com>")
-@click.option("--compile/--no-compile", default=False, show_default=True)
-@click.option("--zip/--no-zip", default=False, show_default=True)
-@click.argument("args", nargs=-1)
-def tar(python_bin, python_name, name, compile, zip, version, maintainer, args):
+@base_option
+def tar(python_bin, python_name, name, compile, zip, args):
     with tempfile.TemporaryDirectory() as work:
         workd = Path(work)
         pathname = _install(
@@ -208,25 +215,14 @@ def tar(python_bin, python_name, name, compile, zip, version, maintainer, args):
             args=args,
         )
         _log.info("PYTHONPATH=/%s", pathname.relative_to(workd))
-        src = Path(f"{name}-{version}.tar.gz")
-        _tar(workd / "usr", src, f"{name}-{version}/usr/")
+        src = Path(f"{name}.tar.gz")
+        _tar(workd / "usr", src, f"{name}/usr/")
 
 
 @cli.command()
 @verbose_option
-@click.option("--python-bin", default="python", show_default=True)
-@click.option(
-    "--python-name",
-    default="python3",
-    help="destination binary name of python",
-    show_default=True,
-)
-@click.option("--name", default="localpkg", show_default=True)
-@click.option("--version", default="0.0.1", show_default=True)
-@click.option("--maintainer", default="Watanabe Takashi <wtnb75@gmail.com>")
-@click.option("--compile/--no-compile", default=False, show_default=True)
-@click.option("--zip/--no-zip", default=False, show_default=True)
-@click.argument("args", nargs=-1)
+@base_option
+@package_option
 def deb(python_bin, python_name, name, compile, zip, version, maintainer, args):
     with tempfile.TemporaryDirectory() as work:
         workd = Path(work)
@@ -255,19 +251,8 @@ Description: local package for {name}
 
 @cli.command()
 @verbose_option
-@click.option("--python-bin", default="python", show_default=True)
-@click.option(
-    "--python-name",
-    default="python3",
-    help="destination binary name of python",
-    show_default=True,
-)
-@click.option("--name", default="localpkg", show_default=True)
-@click.option("--version", default="0.0.1", show_default=True)
-@click.option("--maintainer", default="Watanabe Takashi <wtnb75@gmail.com>")
-@click.option("--compile/--no-compile", default=False, show_default=True)
-@click.option("--zip/--no-zip", default=False, show_default=True)
-@click.argument("args", nargs=-1)
+@base_option
+@package_option
 def rpm(python_bin, python_name, name, compile, zip, version, maintainer, args):
     import shutil
 
@@ -331,19 +316,8 @@ rm -rf %{{buildroot}}
 
 @cli.command()
 @verbose_option
-@click.option("--python-bin", default="python", show_default=True)
-@click.option(
-    "--python-name",
-    default="python3",
-    help="destination binary name of python",
-    show_default=True,
-)
-@click.option("--name", default="localpkg", show_default=True)
-@click.option("--version", default="0.0.1", show_default=True)
-@click.option("--maintainer", default="Watanabe Takashi <wtnb75@gmail.com>")
-@click.option("--compile/--no-compile", default=False, show_default=True)
-@click.option("--zip/--no-zip", default=False, show_default=True)
-@click.argument("args", nargs=-1)
+@base_option
+@package_option
 def apk(python_bin, python_name, name, compile, zip, version, maintainer, args):
     subprocess.run(["abuild-sign", "-e"]).check_returncode()
     with tempfile.TemporaryDirectory() as work:
