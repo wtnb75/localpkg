@@ -98,7 +98,11 @@ def _pip_install(vpip_bin: Path, compile: bool, args: tuple[str], env: dict):
 def _fixbin1(fn: Path, pkgdir: Path, python_name: str | None = None):
     _log.info("fix binary: %s pkgdir=%s, python=%s", fn, pkgdir, python_name)
     ofn = str(fn) + ".new"
-    txt = fn.read_text()
+    try:
+        txt = fn.read_text()
+    except Exception:
+        _log.error("failed to read file: %s", fn)
+        return
     if not txt.startswith("#!/"):
         _log.debug("pass(shebang)")
         return
