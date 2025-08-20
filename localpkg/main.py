@@ -292,7 +292,7 @@ def rpm(python_bin, python_name, name, compile, zip, version, maintainer, args):
             (workd / n).mkdir()
         src = workd / "SOURCES" / f"{name}-{version}.tar.gz"
         rpm = workd / "RPMS" / "noarch" / f"{name}-{version}-1.noarch.rpm"
-        _tar(workd / "usr", src, f"{name}-{version}/")
+        _tar(workd / "usr", src, f"{name}-{version}/usr/")
         specfn = workd / "SPECS" / f"{name}.spec"
         specfn.write_text(f"""
 Summary: local package for {name}
@@ -319,7 +319,8 @@ rm -rf %{{buildroot}}
 
 %install
 mkdir -p %{{buildroot}}/usr
-cp -r . %{{buildroot}}/usr
+cd usr
+cp -r . %{{buildroot}}/usr/
 
 %clean
 rm -rf %{{buildroot}}

@@ -84,6 +84,21 @@ tasks:
     cmds:
       - "docker compose exec alpine apk add /w/localpkg-{{.VERSION}}-r1.apk --allow-untrusted"
 
+  uninstall:deb:
+    desc: uninstall .deb package
+    cmds:
+      - "docker compose exec ubuntu dpkg -r localpkg"
+
+  uninstall:rpm:
+    desc: install .rpm package
+    cmds:
+      - "docker compose exec almalinux rpm -e localpkg"
+
+  uninstall:apk:
+    desc: install .apk package
+    cmds:
+      - "docker compose exec alpine apk del localpkg"
+
   help:deb:
     desc: show help for .deb package
     cmds:
@@ -129,6 +144,13 @@ tasks:
       - task install:deb
       - task install:rpm
       - task install:apk
+
+  uninstall:all:
+    desc: show help for all packages
+    cmds:
+      - task uninstall:deb
+      - task uninstall:rpm
+      - task uninstall:apk
 
   help:all:
     desc: show help for all packages
