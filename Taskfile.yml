@@ -17,6 +17,13 @@ tasks:
     cmds:
       - docker compose up -d
 
+  boot:wait:
+    desc: wait for builder
+    cmds:
+      - 'while true ; do docker compose top alpine | grep -q apk || exit 0 ; sleep 1 ; done'
+      - 'while true ; do docker compose top ubuntu | grep -q apt || exit 0 ; sleep 1 ; done'
+      - 'while true ; do docker compose top almalinux | grep -q dnf || exit 0 ; sleep 1 ; done'
+
   shutdown:
     desc: shutdown builder
     cmds:
@@ -36,20 +43,20 @@ tasks:
   pkg:deb:
     desc: build .deb package
     cmds:
-      - "docker compose exec -w /w ubuntu /tmp/localpkg-{{.VERSION}}/usr/bin/localpkg deb --python-bin python3 --name localpkg --version {{.VERSION}} --zip ."
+      - "docker compose exec -w /w ubuntu /tmp/localpkg-{{.VERSION}}/usr/bin/localpkg deb --name localpkg --version {{.VERSION}} --zip ."
 
   pkg:rpm:
     desc: build .rpm package
     cmds:
-      - "docker compose exec -w /w almalinux /tmp/localpkg-{{.VERSION}}/usr/bin/localpkg rpm --python-bin python3 --name localpkg --version {{.VERSION}} --zip ."
+      - "docker compose exec -w /w almalinux /tmp/localpkg-{{.VERSION}}/usr/bin/localpkg rpm --name localpkg --version {{.VERSION}} --zip ."
 
   pkg:apk:
     desc: build .apk package
     cmds:
-      - "docker compose exec -w /w -u pkg alpine /tmp/localpkg-{{.VERSION}}/usr/bin/localpkg apk --python-bin python3 --name localpkg --version {{.VERSION}} --key {{.APK_KEY}} --zip ."
+      - "docker compose exec -w /w -u pkg alpine /tmp/localpkg-{{.VERSION}}/usr/bin/localpkg apk --name localpkg --version {{.VERSION}} --key {{.APK_KEY}} --zip ."
     preconditions:
-      - sh: test -n "{{.APK_KEY}}"
-        msg: 'APK_KEY variable is required'
+      - sh: "test -n '{{.APK_KEY}}'"
+        msg: "APK_KEY variable is required"
 
   pkg:apk:key:
     desc: generate apk key
@@ -57,5 +64,7 @@ tasks:
       - "openssl genrsa -out {{.APK_KEY}}"
       - "chmod 600 {{.APK_KEY}}"
     preconditions:
-      - sh: test -n "{{.APK_KEY}}"
-        msg: 'APK_KEY variable is not set, generating a new key'
+      - sh: "test -n '{{.APK_KEY}}'"
+        msg: "APK_KEY variable is required"
+      - sh: "test ! -f {{.APK_KEY}}"
+        msg: "APK_KEY exists"

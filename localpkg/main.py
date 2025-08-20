@@ -42,7 +42,7 @@ def verbose_option(func):
 
 
 def base_option(func):
-    @click.option("--python-bin", default="python", show_default=True, help="python to create venv")
+    @click.option("--python-bin", default="python3", show_default=True, help="python to create venv")
     @click.option(
         "--python-name",
         default="python3",
