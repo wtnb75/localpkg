@@ -319,7 +319,8 @@ rm -rf %{{buildroot}}
 
 %install
 mkdir -p %{{buildroot}}/usr
-cp -r usr/ %{{buildroot}}/usr
+cd usr
+cp -r . %{{buildroot}}/usr/
 
 %clean
 rm -rf %{{buildroot}}
