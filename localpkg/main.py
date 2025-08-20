@@ -367,20 +367,20 @@ source="{name}-{version}.tar.gz"
 builddir="$srcdir/$pkgname-$pkgver"
 
 prepare() {{
-	:
+    :
 }}
 
 build() {{
-	:
+    :
 }}
 
 check() {{
-	:
+    :
 }}
 
 package() {{
-	mkdir -p ${{pkgdir}}/usr
-	cp -r ${{builddir}}/usr/ ${{pkgdir}}/
+    mkdir -p ${{pkgdir}}/usr
+    cp -r ${{builddir}}/usr/ ${{pkgdir}}/
 }}
 """)
         subprocess.run(["abuild", "checksum"], cwd=workd / "build").check_returncode()
