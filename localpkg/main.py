@@ -78,7 +78,7 @@ def _venv(python_bin, output_dir) -> Path:
 
 def _envvars(user_base) -> dict:
     _log.debug("make environ: userbase=%s", user_base)
-    keepenv = {}
+    keepenv = {"http_proxy", "https_proxy", "no_proxy"}
     env = {k: v for k, v in os.environ.items() if k in keepenv}
     env["PYTHONUSERBASE"] = user_base
     return env
@@ -137,6 +137,7 @@ def _fixzip(sitedir: Path, ofn: Path, do_zip: bool = True) -> Path:
 
     if do_zip:
         zf = zipfile.ZipFile(ofn, "w")
+        exists = False
         for root, _, files in sitedir.walk():
             for fn in files:
                 path = Path(root) / fn
@@ -146,11 +147,15 @@ def _fixzip(sitedir: Path, ofn: Path, do_zip: bool = True) -> Path:
                     compress_type=zipfile.ZIP_DEFLATED,
                     compresslevel=9,
                 )
+                exists = True
                 path.unlink()
         zf.close()
+        if not exists:
+            ofn.unlink()
         shutil.rmtree(sitedir, ignore_errors=True)
         try:
             sitedir.parent.rmdir()
+            sitedir.parent.parent.rmdir()
         except Exception:
             pass
         return ofn
@@ -175,12 +180,15 @@ def _install(python_bin, destdir, python_name, name, compile, zip, prefix, args)
 def _tar(rootdir: Path, dest: Path, prefix: str):
     import tarfile
 
+    def _filt(input: tarfile.TarInfo) -> tarfile.TarInfo:
+        return input.replace(uid=0, gid=0, uname="root", gname="root", deep=False)
+
     with tarfile.open(dest, "w:gz") as tar:
         for root, _, files in rootdir.walk():
             rootp = Path(root)
             for fn in files:
                 name = rootp / fn
-                tar.add(name, prefix + str(name.relative_to(rootdir)))
+                tar.add(name, prefix + str(name.relative_to(rootdir)), recursive=False, filter=_filt)
 
 
 @cli.command()
@@ -205,7 +213,8 @@ def install(python_bin, destdir, python_name, name, compile, zip, prefix, args):
 @cli.command()
 @verbose_option
 @base_option
-def tar(python_bin, python_name, name, compile, zip, args):
+@click.option("--version", default="0.0.1", show_default=True)
+def tar(python_bin, python_name, name, compile, zip, version, args):
     with tempfile.TemporaryDirectory() as work:
         workd = Path(work)
         pathname = _install(
@@ -219,8 +228,8 @@ def tar(python_bin, python_name, name, compile, zip, args):
             args=args,
         )
         _log.info("PYTHONPATH=/%s", pathname.relative_to(workd))
-        src = Path(f"{name}.tar.gz")
-        _tar(workd / "usr", src, f"{name}/usr/")
+        src = Path(f"{name}-{version}.tar.gz")
+        _tar(workd / "usr", src, f"{name}-{version}/usr/")
 
 
 @cli.command()
