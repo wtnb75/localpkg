@@ -50,3 +50,12 @@ tasks:
     preconditions:
       - sh: test -n "{{.APK_KEY}}"
         msg: 'APK_KEY variable is required'
+
+  pkg:apk:key:
+    desc: generate apk key
+    cmds:
+      - "openssl genrsa -out {{.APK_KEY}}"
+      - "chmod 600 {{.APK_KEY}}"
+    preconditions:
+      - sh: test -n "{{.APK_KEY}}"
+        msg: 'APK_KEY variable is not set, generating a new key'
