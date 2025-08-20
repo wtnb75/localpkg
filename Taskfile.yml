@@ -68,3 +68,78 @@ tasks:
         msg: "APK_KEY variable is required"
       - sh: "test ! -f {{.APK_KEY}}"
         msg: "APK_KEY exists"
+
+  install:deb:
+    desc: install .deb package
+    cmds:
+      - "docker compose exec ubuntu dpkg -i /w/localpkg_{{.VERSION}}_all.deb"
+
+  install:rpm:
+    desc: install .rpm package
+    cmds:
+      - "docker compose exec almalinux rpm -ivh /w/localpkg-{{.VERSION}}-1.noarch.rpm"
+
+  install:apk:
+    desc: install .apk package
+    cmds:
+      - "docker compose exec alpine apk add /w/localpkg-{{.VERSION}}-r1.apk --allow-untrusted"
+
+  help:deb:
+    desc: show help for .deb package
+    cmds:
+      - "docker compose exec ubuntu localpkg --help"
+
+  help:rpm:
+    desc: show help for .rpm package
+    cmds:
+      - "docker compose exec almalinux localpkg --help"
+
+  help:apk:
+    desc: show help for .apk package
+    cmds:
+      - "docker compose exec alpine localpkg --help"
+
+  version:deb:
+    desc: show version for .deb package
+    cmds:
+      - "docker compose exec ubuntu localpkg --version"
+
+  version:rpm:
+    desc: show version for .rpm package
+    cmds:
+      - "docker compose exec almalinux localpkg --version"
+
+  version:apk:
+    desc: show version for .apk package
+    cmds:
+      - "docker compose exec alpine localpkg --version"
+
+  pkg:all:
+    desc: show help for all packages
+    cmds:
+      - task pkg:tar
+      - task prepare
+      - task pkg:deb
+      - task pkg:rpm
+      - task pkg:apk
+
+  install:all:
+    desc: show help for all packages
+    cmds:
+      - task install:deb
+      - task install:rpm
+      - task install:apk
+
+  help:all:
+    desc: show help for all packages
+    cmds:
+      - task help:deb
+      - task help:rpm
+      - task help:apk
+
+  version:all:
+    desc: show version for all packages
+    cmds:
+      - task version:deb
+      - task version:rpm
+      - task version:apk
