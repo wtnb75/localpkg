@@ -415,13 +415,17 @@ package() {{
             cwd=workd / "build",
             env=env,
         )
+        created = False
         for root, _, files in (workd / "dest").walk():
             _log.info("files: root=%s, files=%s", root, files)
             for fn in files:
-                src = Path(root) / fn
-                _log.info("copy: %s -> %s", src, output_dir)
-                shutil.copy(src, output_dir)
-        build_res.check_returncode()
+                if fn.endswith(".apk"):
+                    src = Path(root) / fn
+                    _log.info("copy: %s -> %s", src, output_dir)
+                    created = True
+                    shutil.copy(src, output_dir)
+        if not created:
+            build_res.check_returncode()
 
 
 @cli.command()

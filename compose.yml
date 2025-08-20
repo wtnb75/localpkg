@@ -1,0 +1,27 @@
+services:
+  ubuntu:
+    image: ubuntu:24.04
+    command:
+    - sh
+    - -c
+    - "apt update && apt install -y fakeroot python3 python3-venv && sleep infinity"
+    environment:
+      DEBIAN_FRONTEND: noninteractive
+    volumes:
+    - ./:/w
+  alpine:
+    image: alpine:3
+    command:
+    - sh
+    - -c
+    - "apk update && apk add abuild python3 openssh && adduser pkg -G abuild -D && sleep infinity"
+    volumes:
+    - ./:/w
+  almalinux:
+    image: almalinux:10
+    command:
+    - sh
+    - -c
+    - "dnf install -y rpm-build python3 && sleep infinity"
+    volumes:
+    - ./:/w
