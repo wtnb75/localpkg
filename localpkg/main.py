@@ -4,6 +4,7 @@ import click
 import functools
 import tempfile
 import subprocess
+import shutil
 from pathlib import Path
 from logging import getLogger
 from .version import VERSION
@@ -41,16 +42,16 @@ def verbose_option(func):
 
 
 def base_option(func):
-    @click.option("--python-bin", default="python", show_default=True)
+    @click.option("--python-bin", default="python", show_default=True, help="python to create venv")
     @click.option(
         "--python-name",
         default="python3",
         help="destination binary name of python",
         show_default=True,
     )
-    @click.option("--name", default=Path.cwd().name, show_default=True)
-    @click.option("--compile/--no-compile", default=False, show_default=True)
-    @click.option("--zip/--no-zip", default=False, show_default=True)
+    @click.option("--name", default=Path.cwd().name, show_default=True, help="name of package")
+    @click.option("--compile/--no-compile", default=False, show_default=True, help="compile .py to .pyc")
+    @click.option("--zip/--no-zip", default=False, show_default=True, help="use zipimport")
     @click.argument("args", nargs=-1)
     @functools.wraps(func)
     def _(*a, **kw):
@@ -60,7 +61,7 @@ def base_option(func):
 
 
 def package_option(func):
-    @click.option("--maintainer", default="Watanabe Takashi <wtnb75@gmail.com>")
+    @click.option("--maintainer", default="Watanabe Takashi <wtnb75@gmail.com>", help="maintainer name")
     @click.option("--version", default="0.0.1", show_default=True)
     @functools.wraps(func)
     def _(*a, **kw):
@@ -133,7 +134,6 @@ def _fixbin(dn: Path, pkgdir: Path, python_name: str | None = None):
 
 def _fixzip(sitedir: Path, ofn: Path, do_zip: bool = True) -> Path:
     import zipfile
-    import shutil
 
     if do_zip:
         zf = zipfile.ZipFile(ofn, "w")
@@ -197,6 +197,7 @@ def _tar(rootdir: Path, dest: Path, prefix: str):
 @click.option("--destdir", type=click.Path(exists=True, file_okay=False, dir_okay=True))
 @click.option("--prefix", default="usr", show_default=True)
 def install(python_bin, destdir, python_name, name, compile, zip, prefix, args):
+    """install to DESTDIR"""
     pathname = _install(
         python_bin=python_bin,
         destdir=destdir,
@@ -213,8 +214,14 @@ def install(python_bin, destdir, python_name, name, compile, zip, prefix, args):
 @cli.command()
 @verbose_option
 @base_option
+@click.option("--install-prefix", default="usr", show_default=True)
+@click.option("--tar-prefix")
 @click.option("--version", default="0.0.1", show_default=True)
-def tar(python_bin, python_name, name, compile, zip, version, args):
+def tar(python_bin, python_name, name, compile, zip, version, install_prefix, tar_prefix, args):
+    """create .tar.gz package"""
+    pfx = install_prefix.strip("/")
+    if not tar_prefix:
+        tar_prefix = f"{name}-{version}/{pfx}/"
     with tempfile.TemporaryDirectory() as work:
         workd = Path(work)
         pathname = _install(
@@ -224,12 +231,12 @@ def tar(python_bin, python_name, name, compile, zip, version, args):
             name=name,
             compile=compile,
             zip=zip,
-            prefix="usr",
+            prefix=pfx,
             args=args,
         )
         _log.info("PYTHONPATH=/%s", pathname.relative_to(workd))
         src = Path(f"{name}-{version}.tar.gz")
-        _tar(workd / "usr", src, f"{name}-{version}/usr/")
+        _tar(workd / "usr", src, tar_prefix)
 
 
 @cli.command()
@@ -237,6 +244,7 @@ def tar(python_bin, python_name, name, compile, zip, version, args):
 @base_option
 @package_option
 def deb(python_bin, python_name, name, compile, zip, version, maintainer, args):
+    """create .deb package for debian variants"""
     with tempfile.TemporaryDirectory() as work:
         workd = Path(work)
         pathname = _install(
@@ -267,8 +275,7 @@ Description: local package for {name}
 @base_option
 @package_option
 def rpm(python_bin, python_name, name, compile, zip, version, maintainer, args):
-    import shutil
-
+    """create .rpm package for redhat variants"""
     with tempfile.TemporaryDirectory() as work:
         workd = Path(work)
         pathname = _install(
@@ -331,9 +338,27 @@ rm -rf %{{buildroot}}
 @verbose_option
 @base_option
 @package_option
-def apk(python_bin, python_name, name, compile, zip, version, maintainer, args):
-    subprocess.run(["abuild-sign", "-e"]).check_returncode()
+@click.option(
+    "--output-dir",
+    type=click.Path(file_okay=False, dir_okay=True),
+    default=os.getcwd(),
+    show_default=True,
+    help="output directory",
+)
+@click.option("--key", type=click.Path(exists=True, dir_okay=False), required=True, help="openssh private key to sign")
+def apk(python_bin, python_name, name, compile, zip, version, maintainer, key, output_dir, args):
+    """create .apk package for alpine linux"""
+    keytext = Path(key).read_text()
+    res = subprocess.run(["ssh-keygen", "-f", key, "-y"], capture_output=True, encoding="utf-8")
+    res.check_returncode()
+    pubkey = res.stdout.strip()
     with tempfile.TemporaryDirectory() as work:
+        keyfn = Path(work) / "packager.key"
+        keyfn_p = keyfn.with_name("packager.key.pub")
+        keyfn.write_text(keytext)
+        keyfn_p.write_text(pubkey)
+        env = {"PACKAGER_PRIVKEY": keyfn, "CARCH": "noarch"}
+        subprocess.run(["abuild-sign", "-e"], env=env).check_returncode()
         workd = Path(work)
         pathname = _install(
             python_bin=python_bin,
@@ -346,6 +371,7 @@ def apk(python_bin, python_name, name, compile, zip, version, maintainer, args):
             args=args,
         )
         (workd / "build").mkdir()
+        (workd / "dest").mkdir()
         src = workd / "build" / f"{name}-{version}.tar.gz"
         apk = workd / "build" / "APKBUILD"
         _tar(workd / "usr", src, f"{name}-{version}/usr/")
@@ -384,11 +410,40 @@ package() {{
 }}
 """)
         subprocess.run(["abuild", "checksum"], cwd=workd / "build").check_returncode()
-        subprocess.run(
-            ["abuild", "-rF", "-P", os.getcwd()],
+        build_res = subprocess.run(
+            ["abuild", "-rF", "-P", workd / "dest"],
             cwd=workd / "build",
-            env={"CARCH": "noarch"},
-        ).check_returncode()
+            env=env,
+        )
+        for root, _, files in (workd / "dest").walk():
+            _log.info("files: root=%s, files=%s", root, files)
+            for fn in files:
+                src = Path(root) / fn
+                _log.info("copy: %s -> %s", src, output_dir)
+                shutil.copy(src, output_dir)
+        build_res.check_returncode()
+
+
+@cli.command()
+@click.option("--key", type=click.Path(exists=True, dir_okay=False), help="gpg key to sign")
+@click.argument("files", nargs=-1, type=click.Path(exists=True, dir_okay=False))
+def rpm_sign(key, files):
+    """TODO: sign .rpm package"""
+    # TODO: prepare key
+    for f in files:
+        _log.info("signing: %s", f)
+        subprocess.run(["rpm", "--addsign", f]).check_returncode()
+
+
+@cli.command()
+@click.option("--key", type=click.Path(exists=True, dir_okay=False), help="gpg key to sign")
+@click.argument("files", nargs=-1, type=click.Path(exists=True, dir_okay=False))
+def deb_sign(key, files):
+    """TODO: sign .deb package"""
+    # TODO: prepare key
+    for f in files:
+        _log.info("signing: %s", f)
+        subprocess.run(["debsigs", "--sign=maint", f]).check_returncode()
 
 
 if __name__ == "__main__":
