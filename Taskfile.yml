@@ -5,6 +5,7 @@ version: '3'
 vars:
   VERSION: 0.0.1
   APK_KEY: ""
+  PKG: localpkg
 
 tasks:
   default:
@@ -32,28 +33,31 @@ tasks:
   pkg:tar:
     desc: build tarball
     cmds:
-      - "python -m localpkg.main tar --zip --name localpkg --version {{.VERSION}} ."
+      - "python -m localpkg.main tar --zip --name {{.PKG}} --version {{.VERSION}} ."
 
   prepare:
     desc: prepare build
     cmds:
+      - task: boot
+      - task: pkg:tar
+      - task: boot:wait
       - for: [ubuntu, alpine, almalinux]
-        cmd: "docker compose exec {{.ITEM}} tar xf /w/localpkg-{{.VERSION}}.tar.gz -C /tmp"
+        cmd: "docker compose exec {{.ITEM}} tar xf /w/{{.PKG}}-{{.VERSION}}.tar.gz -C /tmp"
 
   pkg:deb:
     desc: build .deb package
     cmds:
-      - "docker compose exec -w /w ubuntu /tmp/localpkg-{{.VERSION}}/usr/bin/localpkg deb --name localpkg --version {{.VERSION}} --zip ."
+      - "docker compose exec -w /w ubuntu /tmp/{{.PKG}}-{{.VERSION}}/usr/bin/localpkg deb --name {{.PKG}} --version {{.VERSION}} --zip ."
 
   pkg:rpm:
     desc: build .rpm package
     cmds:
-      - "docker compose exec -w /w almalinux /tmp/localpkg-{{.VERSION}}/usr/bin/localpkg rpm --name localpkg --version {{.VERSION}} --zip ."
+      - "docker compose exec -w /w almalinux /tmp/{{.PKG}}-{{.VERSION}}/usr/bin/localpkg rpm --name {{.PKG}} --version {{.VERSION}} --zip ."
 
   pkg:apk:
     desc: build .apk package
     cmds:
-      - "docker compose exec -w /w -u pkg alpine /tmp/localpkg-{{.VERSION}}/usr/bin/localpkg apk --name localpkg --version {{.VERSION}} --key {{.APK_KEY}} --zip ."
+      - "docker compose exec -w /w -u pkg alpine /tmp/{{.PKG}}-{{.VERSION}}/usr/bin/localpkg apk --name {{.PKG}} --version {{.VERSION}} --key {{.APK_KEY}} --zip ."
     preconditions:
       - sh: "test -n '{{.APK_KEY}}'"
         msg: "APK_KEY variable is required"
@@ -72,96 +76,116 @@ tasks:
   install:deb:
     desc: install .deb package
     cmds:
-      - "docker compose exec ubuntu dpkg -i /w/localpkg_{{.VERSION}}_all.deb"
+      - "docker compose exec ubuntu dpkg -i /w/{{.PKG}}_{{.VERSION}}_all.deb"
 
   install:rpm:
     desc: install .rpm package
     cmds:
-      - "docker compose exec almalinux rpm -ivh /w/localpkg-{{.VERSION}}-1.noarch.rpm"
+      - "docker compose exec almalinux rpm -ivh /w/{{.PKG}}-{{.VERSION}}-1.noarch.rpm"
 
   install:apk:
     desc: install .apk package
     cmds:
-      - "docker compose exec alpine apk add /w/localpkg-{{.VERSION}}-r1.apk --allow-untrusted"
+      - "docker compose exec alpine apk add /w/{{.PKG}}-{{.VERSION}}-r1.apk --allow-untrusted"
 
   uninstall:deb:
     desc: uninstall .deb package
     cmds:
-      - "docker compose exec ubuntu dpkg -r localpkg"
+      - "docker compose exec ubuntu dpkg -r {{.PKG}}"
 
   uninstall:rpm:
     desc: install .rpm package
     cmds:
-      - "docker compose exec almalinux rpm -e localpkg"
+      - "docker compose exec almalinux rpm -e {{.PKG}}"
 
   uninstall:apk:
     desc: install .apk package
     cmds:
-      - "docker compose exec alpine apk del localpkg"
+      - "docker compose exec alpine apk del {{.PKG}}"
 
   help:deb:
     desc: show help for .deb package
     cmds:
-      - "docker compose exec ubuntu localpkg --help"
+      - "docker compose exec ubuntu {{.PKG}} --help"
 
   help:rpm:
     desc: show help for .rpm package
     cmds:
-      - "docker compose exec almalinux localpkg --help"
+      - "docker compose exec almalinux {{.PKG}} --help"
 
   help:apk:
     desc: show help for .apk package
     cmds:
-      - "docker compose exec alpine localpkg --help"
+      - "docker compose exec alpine {{.PKG}} --help"
 
   version:deb:
     desc: show version for .deb package
     cmds:
-      - "docker compose exec ubuntu localpkg --version"
+      - "docker compose exec ubuntu {{.PKG}} --version"
 
   version:rpm:
     desc: show version for .rpm package
     cmds:
-      - "docker compose exec almalinux localpkg --version"
+      - "docker compose exec almalinux {{.PKG}} --version"
 
   version:apk:
     desc: show version for .apk package
     cmds:
-      - "docker compose exec alpine localpkg --version"
+      - "docker compose exec alpine {{.PKG}} --version"
+
+  files:deb:
+    desc: show files installed for .deb package
+    cmds:
+      - "docker compose exec ubuntu dpkg -L {{.PKG}}"
+
+  files:rpm:
+    desc: show files installed for .rpm package
+    cmds:
+      - "docker compose exec almalinux rpm -ql {{.PKG}}"
+
+  files:apk:
+    desc: show files installed for .apk package
+    cmds:
+      - "docker compose exec alpine apk info -L {{.PKG}}"
 
   pkg:all:
-    desc: show help for all packages
+    desc: build all packages
     cmds:
-      - task pkg:tar
-      - task prepare
-      - task pkg:deb
-      - task pkg:rpm
-      - task pkg:apk
+      - task: pkg:deb
+      - task: pkg:rpm
+      - task: pkg:apk
 
   install:all:
-    desc: show help for all packages
+    desc: install all packages
     cmds:
-      - task install:deb
-      - task install:rpm
-      - task install:apk
+      - task: install:deb
+      - task: install:rpm
+      - task: install:apk
 
   uninstall:all:
-    desc: show help for all packages
+    desc: uninstall all packages
     cmds:
-      - task uninstall:deb
-      - task uninstall:rpm
-      - task uninstall:apk
+      - task: uninstall:deb
+      - task: uninstall:rpm
+      - task: uninstall:apk
 
   help:all:
     desc: show help for all packages
     cmds:
-      - task help:deb
-      - task help:rpm
-      - task help:apk
+      - task: help:deb
+      - task: help:rpm
+      - task: help:apk
 
   version:all:
     desc: show version for all packages
     cmds:
-      - task version:deb
-      - task version:rpm
-      - task version:apk
+      - task: version:deb
+      - task: version:rpm
+      - task: version:apk
+
+  files:all:
+    desc: show files installed for all packages
+    cmds:
+      - task: files:deb
+      - task: files:rpm
+      - task: files:apk
