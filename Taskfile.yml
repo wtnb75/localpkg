@@ -1,0 +1,61 @@
+# https://taskfile.dev
+
+version: '3'
+
+vars:
+  VERSION: 0.0.1
+  APK_KEY: ""
+
+tasks:
+  default:
+    cmds:
+      - task -l
+    silent: true
+
+  boot:
+    desc: boot builder
+    cmds:
+      - docker compose up -d
+
+  shutdown:
+    desc: shutdown builder
+    cmds:
+      - docker compose down -v
+
+  pkg:tar:
+    desc: build tarball
+    cmds:
+      - "python -m localpkg.main tar --zip --name localpkg --version {{.VERSION}} ."
+
+  prepare:
+    desc: prepare build
+    cmds:
+      - for: [ubuntu, alpine, almalinux]
+        cmd: "docker compose exec {{.ITEM}} tar xf /w/localpkg-{{.VERSION}}.tar.gz -C /tmp"
+
+  pkg:deb:
+    desc: build .deb package
+    cmds:
+      - "docker compose exec -w /w ubuntu /tmp/localpkg-{{.VERSION}}/usr/bin/localpkg deb --python-bin python3 --name localpkg --version {{.VERSION}} --zip ."
+
+  pkg:rpm:
+    desc: build .rpm package
+    cmds:
+      - "docker compose exec -w /w almalinux /tmp/localpkg-{{.VERSION}}/usr/bin/localpkg rpm --python-bin python3 --name localpkg --version {{.VERSION}} --zip ."
+
+  pkg:apk:
+    desc: build .apk package
+    cmds:
+      - "docker compose exec -w /w -u pkg alpine /tmp/localpkg-{{.VERSION}}/usr/bin/localpkg apk --python-bin python3 --name localpkg --version {{.VERSION}} --key {{.APK_KEY}} --zip ."
+    preconditions:
+      - sh: test -n "{{.APK_KEY}}"
+        msg: 'APK_KEY variable is required'
+
+  pkg:apk:key:
+    desc: generate apk key
+    cmds:
+      - "openssl genrsa -out {{.APK_KEY}}"
+      - "chmod 600 {{.APK_KEY}}"
+    preconditions:
+      - sh: test -n "{{.APK_KEY}}"
+        msg: 'APK_KEY variable is not set, generating a new key'

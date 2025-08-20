@@ -1,6 +1,8 @@
 *.rpm
 *.deb
+*.apk
 *.tar.gz
+*.rsa
 *.pyc
 __pycache__
 *~
