@@ -4,6 +4,7 @@
 *.tar.gz
 *.rsa
 *.pyc
+*.zst
 __pycache__
 *~
 *.swp

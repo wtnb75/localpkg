@@ -214,14 +214,12 @@ def install(python_bin, destdir, python_name, name, compile, zip, prefix, args):
 @cli.command()
 @verbose_option
 @base_option
-@click.option("--install-prefix", default="usr", show_default=True)
-@click.option("--tar-prefix")
+@click.option("--prefix", default="usr", show_default=True)
 @click.option("--version", default="0.0.1", show_default=True)
-def tar(python_bin, python_name, name, compile, zip, version, install_prefix, tar_prefix, args):
+def tar(python_bin, python_name, name, compile, zip, version, prefix, args):
     """create .tar.gz package"""
-    pfx = install_prefix.strip("/")
-    if not tar_prefix:
-        tar_prefix = f"{name}-{version}/{pfx}/"
+    pfx = prefix.strip("/")
+    tar_prefix = f"{name}-{version}/{pfx}/"
     with tempfile.TemporaryDirectory() as work:
         workd = Path(work)
         pathname = _install(
@@ -245,6 +243,8 @@ def tar(python_bin, python_name, name, compile, zip, version, install_prefix, ta
 @package_option
 def deb(python_bin, python_name, name, compile, zip, version, maintainer, args):
     """create .deb package for debian variants"""
+    assert shutil.which("fakeroot")
+    assert shutil.which("dpkg-deb")
     with tempfile.TemporaryDirectory() as work:
         workd = Path(work)
         pathname = _install(
@@ -276,6 +276,7 @@ Description: local package for {name}
 @package_option
 def rpm(python_bin, python_name, name, compile, zip, version, maintainer, args):
     """create .rpm package for redhat variants"""
+    assert shutil.which("rpmbuild")
     with tempfile.TemporaryDirectory() as work:
         workd = Path(work)
         pathname = _install(
@@ -349,6 +350,7 @@ rm -rf %{{buildroot}}
 @click.option("--key", type=click.Path(exists=True, dir_okay=False), required=True, help="openssh private key to sign")
 def apk(python_bin, python_name, name, compile, zip, version, maintainer, key, output_dir, args):
     """create .apk package for alpine linux"""
+    assert shutil.which("abuild")
     keytext = Path(key).read_text()
     res = subprocess.run(["ssh-keygen", "-f", key, "-y"], capture_output=True, encoding="utf-8")
     res.check_returncode()
@@ -430,10 +432,58 @@ package() {{
 
 
 @cli.command()
+@verbose_option
+@base_option
+@package_option
+def pacman(python_bin, python_name, name, compile, zip, version, maintainer, args):
+    """create pacman package for archlinux"""
+    assert shutil.which("makepkg")
+    assert shutil.which("debugedit")
+    with tempfile.TemporaryDirectory() as work:
+        workd = Path(work)
+        pathname = _install(
+            python_bin=python_bin,
+            destdir=workd,
+            python_name=python_name,
+            name=name,
+            compile=compile,
+            zip=zip,
+            prefix="usr",
+            args=args,
+        )
+        src = workd / f"{name}-{version}.tar.gz"
+        _tar(workd / "usr", src, f"{name}-{version}/usr/")
+        pkgbuild = workd / "PKGBUILD"
+        pkgbuild.write_text(f"""
+# mainteiner: {maintainer}
+pkgname="{name}"
+pkgver="{version}"
+pkgrel="1"
+pkgdesc="local package for {name}. if use as library: PYTHONPATH=/{pathname.relative_to(workd)}"
+depends=("python")
+license=("unknown")
+source=("{src.name}")
+sha512sums=("SKIP")
+
+package(){{
+    mkdir -p "${{pkgdir}}"
+    tar xfz ${{srcdir}}/${{source}} -C ${{pkgdir}}
+    mv ${{pkgdir}}/*/usr ${{pkgdir}}
+    rmdir ${{pkgdir}}/* || true
+}}
+""")
+        subprocess.run(["makepkg", "-A"], cwd=workd).check_returncode()
+        for f in workd.glob("*.pkg.tar.zst"):
+            _log.info("copying package: %s", f)
+            shutil.copy(f, ".")
+
+
+@cli.command()
 @click.option("--key", type=click.Path(exists=True, dir_okay=False), help="gpg key to sign")
 @click.argument("files", nargs=-1, type=click.Path(exists=True, dir_okay=False))
 def rpm_sign(key, files):
     """TODO: sign .rpm package"""
+    assert shutil.which("rpm")
     # TODO: prepare key
     for f in files:
         _log.info("signing: %s", f)
@@ -445,6 +495,7 @@ def rpm_sign(key, files):
 @click.argument("files", nargs=-1, type=click.Path(exists=True, dir_okay=False))
 def deb_sign(key, files):
     """TODO: sign .deb package"""
+    assert shutil.which("debsigs")
     # TODO: prepare key
     for f in files:
         _log.info("signing: %s", f)
