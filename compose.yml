@@ -25,3 +25,12 @@ services:
     - "dnf install -y rpm-build python3 procps && exec sleep infinity"
     volumes:
     - ./:/w
+  archlinux:
+    platform: linux/amd64
+    image: archlinux
+    command:
+    - sh
+    - -c
+    - "useradd pkg && pacman -Sy --noconfirm base-devel debugedit python && exec sleep infinity"
+    volumes:
+    - ./:/w

@@ -24,6 +24,7 @@ tasks:
       - 'while true ; do docker compose top alpine | grep -q apk || exit 0 ; sleep 1 ; done'
       - 'while true ; do docker compose top ubuntu | grep -q apt || exit 0 ; sleep 1 ; done'
       - 'while true ; do docker compose top almalinux | grep -q dnf || exit 0 ; sleep 1 ; done'
+      - 'while true ; do docker compose top archlinux | grep -q pacman || exit 0 ; sleep 1 ; done'
 
   shutdown:
     desc: shutdown builder
@@ -41,7 +42,7 @@ tasks:
       - task: boot
       - task: pkg:tar
       - task: boot:wait
-      - for: [ubuntu, alpine, almalinux]
+      - for: [ubuntu, alpine, almalinux, archlinux]
         cmd: "docker compose exec {{.ITEM}} tar xf /w/{{.PKG}}-{{.VERSION}}.tar.gz -C /tmp"
 
   pkg:deb:
@@ -73,6 +74,11 @@ tasks:
       - sh: "test ! -f {{.APK_KEY}}"
         msg: "APK_KEY exists"
 
+  pkg:pacman:
+    desc: build pacman package
+    cmds:
+      - "docker compose exec -w /w -u pkg archlinux /tmp/{{.PKG}}-{{.VERSION}}/usr/bin/localpkg pacman --name {{.PKG}} --version {{.VERSION}} --zip ."
+
   install:deb:
     desc: install .deb package
     cmds:
@@ -88,20 +94,30 @@ tasks:
     cmds:
       - "docker compose exec alpine apk add /w/{{.PKG}}-{{.VERSION}}-r1.apk --allow-untrusted"
 
+  install:pacman:
+    desc: install pacman package
+    cmds:
+      - "docker compose exec archlinux sh -c 'pacman -U --noconfirm /w/{{.PKG}}-{{.VERSION}}-1-*.pkg.tar.zst'"
+
   uninstall:deb:
     desc: uninstall .deb package
     cmds:
       - "docker compose exec ubuntu dpkg -r {{.PKG}}"
 
   uninstall:rpm:
-    desc: install .rpm package
+    desc: uninstall .rpm package
     cmds:
       - "docker compose exec almalinux rpm -e {{.PKG}}"
 
   uninstall:apk:
-    desc: install .apk package
+    desc: uninstall .apk package
     cmds:
       - "docker compose exec alpine apk del {{.PKG}}"
+
+  uninstall:pacman:
+    desc: uninstall pacman package
+    cmds:
+      - "docker compose exec archlinux pacman -R --noconfirm {{.PKG}}"
 
   help:deb:
     desc: show help for .deb package
@@ -118,6 +134,11 @@ tasks:
     cmds:
       - "docker compose exec alpine {{.PKG}} --help"
 
+  help:pacman:
+    desc: show help for pacman package
+    cmds:
+      - "docker compose exec archlinux {{.PKG}} --help"
+
   version:deb:
     desc: show version for .deb package
     cmds:
@@ -132,6 +153,11 @@ tasks:
     desc: show version for .apk package
     cmds:
       - "docker compose exec alpine {{.PKG}} --version"
+
+  version:pacman:
+    desc: show version for pacman package
+    cmds:
+      - "docker compose exec archlinux {{.PKG}} --version"
 
   files:deb:
     desc: show files installed for .deb package
@@ -148,12 +174,18 @@ tasks:
     cmds:
       - "docker compose exec alpine apk info -L {{.PKG}}"
 
+  files:pacman:
+    desc: show files installed for pacman package
+    cmds:
+      - "docker compose exec archlinux pacman -Ql {{.PKG}}"
+
   pkg:all:
     desc: build all packages
     cmds:
       - task: pkg:deb
       - task: pkg:rpm
       - task: pkg:apk
+      - task: pkg:pacman
 
   install:all:
     desc: install all packages
@@ -161,6 +193,7 @@ tasks:
       - task: install:deb
       - task: install:rpm
       - task: install:apk
+      - task: install:pacman
 
   uninstall:all:
     desc: uninstall all packages
@@ -168,6 +201,7 @@ tasks:
       - task: uninstall:deb
       - task: uninstall:rpm
       - task: uninstall:apk
+      - task: uninstall:pacman
 
   help:all:
     desc: show help for all packages
@@ -175,6 +209,7 @@ tasks:
       - task: help:deb
       - task: help:rpm
       - task: help:apk
+      - task: help:pacman
 
   version:all:
     desc: show version for all packages
@@ -182,6 +217,7 @@ tasks:
       - task: version:deb
       - task: version:rpm
       - task: version:apk
+      - task: version:pacman
 
   files:all:
     desc: show files installed for all packages
@@ -189,3 +225,4 @@ tasks:
       - task: files:deb
       - task: files:rpm
       - task: files:apk
+      - task: files:pacman
