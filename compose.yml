@@ -15,7 +15,7 @@ services:
     command:
     - sh
     - -c
-    - "apk update && apk add abuild python3 openssh && adduser pkg -G abuild -D && exec sleep infinity"
+    - "apk update && apk add abuild python3 openssh git && adduser pkg -G abuild -D && exec sleep infinity"
     tmpfs: /tmp:exec
     volumes:
     - ./:/w
