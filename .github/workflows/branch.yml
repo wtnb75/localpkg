@@ -44,6 +44,10 @@ jobs:
         task shutdown
         mkdir pkg
         mv *.deb *.rpm *.pkg.tar.zst *.apk *.tar.gz pkg/
+    - name: pkg index
+      run: |
+        pip install dirindex
+        dirindex make --template apache --hide index.html --recursive pkg
     - uses: wtnb75/actions/merge-pages@main
       with:
         dirs: "cover docs pkg"
