@@ -52,7 +52,7 @@ def base_option(func):
     @click.option("--name", default=Path.cwd().name, show_default=True, help="name of package")
     @click.option("--compile/--no-compile", default=False, show_default=True, help="compile .py to .pyc")
     @click.option("--zip/--no-zip", default=False, show_default=True, help="use zipimport")
-    @click.argument("args", nargs=-1)
+    @click.argument("args", nargs=-1, required=True)
     @functools.wraps(func)
     def _(*a, **kw):
         return func(*a, **kw)
@@ -159,7 +159,10 @@ def _fixzip(sitedir: Path, ofn: Path, do_zip: bool = True) -> Path:
         except Exception:
             pass
         return ofn
-    return sitedir
+    # move site-packages to ofn
+    newdir = ofn.with_suffix("")
+    sitedir.rename(newdir)
+    return newdir
 
 
 def _install(python_bin, destdir, python_name, name, compile, zip, prefix, args):
