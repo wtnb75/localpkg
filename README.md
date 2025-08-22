@@ -15,7 +15,8 @@ Main features:
     - `pip install localpkg`
     - or `pip install git+https://github.com/wtnb75/localpkg/`
 - (alpine)
-    - `apk add https://wtnb75.github.io/localpkg/pkg/localpkg-0.0.1-r1.apk --allow-untrusted`
+    - `wget https://wtnb75.github.io/localpkg/pkg/localpkg-0.0.1-r1.apk`
+    - `apk add localpkg-0.0.1-r1.apk --allow-untrusted`
 - (debian/ubuntu)
     - `curl -LO https://wtnb75.github.io/localpkg/pkg/localpkg_0.0.1_all.deb`
     - `apt install ./localpkg_0.0.1_all.deb`
