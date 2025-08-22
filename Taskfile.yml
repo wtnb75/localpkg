@@ -58,7 +58,11 @@ tasks:
   pkg:apk:
     desc: build .apk package
     cmds:
-      - "docker compose exec -w /w -u pkg alpine /tmp/{{.PKG}}-{{.VERSION}}/usr/bin/localpkg apk --name {{.PKG}} --version {{.VERSION}} --key {{.APK_KEY}} --zip ."
+      - "docker compose exec alpine install -c -o pkg -m 0600 /w/{{.APK_KEY}} /tmp/apk.rsa"
+      - "docker compose exec alpine rm -rf /tmp/build"
+      - "docker compose exec -w /w -u pkg alpine git clone . /tmp/build"
+      - "docker compose exec -w /tmp/build -u pkg alpine /tmp/{{.PKG}}-{{.VERSION}}/usr/bin/localpkg apk --name {{.PKG}} --version {{.VERSION}} --key /tmp/apk.rsa --zip ."
+      - "docker compose exec alpine sh -c 'cp /tmp/build/*.apk /w'"
     preconditions:
       - sh: "test -n '{{.APK_KEY}}'"
         msg: "APK_KEY variable is required"
@@ -77,7 +81,11 @@ tasks:
   pkg:pacman:
     desc: build pacman package
     cmds:
-      - "docker compose exec -w /w -u pkg archlinux /tmp/{{.PKG}}-{{.VERSION}}/usr/bin/localpkg pacman --name {{.PKG}} --version {{.VERSION}} --zip ."
+      - "docker compose exec archlinux install -c -o pkg -m 0600 /w/{{.APK_KEY}} /tmp/apk.rsa"
+      - "docker compose exec archlinux rm -rf /tmp/build"
+      - "docker compose exec -w /w -u pkg archlinux git clone . /tmp/build"
+      - "docker compose exec -w /tmp/build -u pkg archlinux /tmp/{{.PKG}}-{{.VERSION}}/usr/bin/localpkg pacman --name {{.PKG}} --version {{.VERSION}} --zip ."
+      - "docker compose exec archlinux sh -c 'cp /tmp/build/*.zst /w'"
 
   install:deb:
     desc: install .deb package

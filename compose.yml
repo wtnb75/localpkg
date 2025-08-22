@@ -7,6 +7,7 @@ services:
     - "apt update && apt install -y fakeroot python3 python3-venv && exec sleep infinity"
     environment:
       DEBIAN_FRONTEND: noninteractive
+    tmpfs: /tmp:exec
     volumes:
     - ./:/w
   alpine:
@@ -14,7 +15,8 @@ services:
     command:
     - sh
     - -c
-    - "apk update && apk add abuild python3 openssh && adduser pkg -G abuild -D && exec sleep infinity"
+    - "apk update && apk add abuild python3 openssh git && adduser pkg -G abuild -D && exec sleep infinity"
+    tmpfs: /tmp:exec
     volumes:
     - ./:/w
   almalinux:
@@ -23,6 +25,7 @@ services:
     - sh
     - -c
     - "dnf install -y rpm-build python3 procps && exec sleep infinity"
+    tmpfs: /tmp:exec
     volumes:
     - ./:/w
   archlinux:
@@ -31,6 +34,7 @@ services:
     command:
     - sh
     - -c
-    - "useradd pkg && pacman -Sy --noconfirm base-devel debugedit python && exec sleep infinity"
+    - "useradd pkg && pacman -Sy --noconfirm base-devel debugedit python git && exec sleep infinity"
+    tmpfs: /tmp:exec
     volumes:
     - ./:/w

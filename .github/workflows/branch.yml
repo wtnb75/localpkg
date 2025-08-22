@@ -30,9 +30,23 @@ jobs:
       with:
         output-dir: docs
         module: localpkg
+    - name: Install Task
+      uses: arduino/setup-task@v2
+    - shell: bash
+      run: |
+        pip uninstall -r requirements.txt -r requirements-dev.txt -y
+        python -m venv .venv
+        source .venv/bin/activate
+        pip install -r requirements.txt
+        task prepare
+        task APK_KEY=tmp.rsa pkg:apk:key
+        task APK_KEY=tmp.rsa pkg:all
+        task shutdown
+        mkdir pkg
+        mv *.deb *.rpm *.pkg.tar.zst *.apk *.tar.gz pkg/
     - uses: wtnb75/actions/merge-pages@main
       with:
-        dirs: "cover docs"
+        dirs: "cover docs pkg"
         #pydist: dist
 #    - uses: wtnb75/actions/docker@main
 #      with:
