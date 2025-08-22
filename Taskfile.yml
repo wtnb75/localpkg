@@ -81,7 +81,11 @@ tasks:
   pkg:pacman:
     desc: build pacman package
     cmds:
-      - "docker compose exec -w /w -u pkg archlinux /tmp/{{.PKG}}-{{.VERSION}}/usr/bin/localpkg pacman --name {{.PKG}} --version {{.VERSION}} --zip ."
+      - "docker compose exec archlinux install -c -o pkg -m 0600 /w/{{.APK_KEY}} /tmp/apk.rsa"
+      - "docker compose exec archlinux rm -rf /tmp/build"
+      - "docker compose exec -w /w -u pkg archlinux git clone . /tmp/build"
+      - "docker compose exec -w /tmp/build -u pkg archlinux /tmp/{{.PKG}}-{{.VERSION}}/usr/bin/localpkg apk --name {{.PKG}} --version {{.VERSION}} --key /tmp/apk.rsa --zip ."
+      - "docker compose exec archlinux sh -c 'cp /tmp/build/*.zst /w'"
 
   install:deb:
     desc: install .deb package

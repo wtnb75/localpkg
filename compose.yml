@@ -34,7 +34,7 @@ services:
     command:
     - sh
     - -c
-    - "useradd pkg && pacman -Sy --noconfirm base-devel debugedit python && exec sleep infinity"
+    - "useradd pkg && pacman -Sy --noconfirm base-devel debugedit python git && exec sleep infinity"
     tmpfs: /tmp:exec
     volumes:
     - ./:/w
