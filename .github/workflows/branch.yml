@@ -30,9 +30,19 @@ jobs:
       with:
         output-dir: docs
         module: localpkg
+    - name: Install Task
+      uses: arduino/setup-task@v2
+    - shell: bash
+      run: |
+        task prepare
+        task APK_KEY=tmp.rsa pkg:apk:key
+        task APK_KEY=tmp.rsa pkg:all
+        task shutdown
+        mkdir pkg
+        mv *.deb *.rpm *.pkg.tar.zst *.apk *.tar.gz pkg/
     - uses: wtnb75/actions/merge-pages@main
       with:
-        dirs: "cover docs"
+        dirs: "cover docs pkg"
         #pydist: dist
 #    - uses: wtnb75/actions/docker@main
 #      with:
