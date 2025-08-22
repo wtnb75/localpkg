@@ -34,6 +34,7 @@ jobs:
       uses: arduino/setup-task@v2
     - shell: bash
       run: |
+        pip uninstall -r requirements.txt -r requirements-dev.txt -y
         task prepare
         task APK_KEY=tmp.rsa pkg:apk:key
         task APK_KEY=tmp.rsa pkg:all
