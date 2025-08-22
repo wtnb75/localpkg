@@ -159,7 +159,10 @@ def _fixzip(sitedir: Path, ofn: Path, do_zip: bool = True) -> Path:
         except Exception:
             pass
         return ofn
-    return sitedir
+    # move site-packages to ofn
+    newdir = ofn.with_suffix("")
+    sitedir.rename(newdir)
+    return newdir
 
 
 def _install(python_bin, destdir, python_name, name, compile, zip, prefix, args):
