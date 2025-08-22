@@ -58,8 +58,7 @@ tasks:
   pkg:apk:
     desc: build .apk package
     cmds:
-      - "docker compose cp {{.APK_KEY}} alpine:/tmp/apk.rsa"
-      - "docker compose exec alpine chown pkg: /tmp/apk.rsa"
+      - "docker compose exec alpine install -c -o pkg -m 0600 /w/{{.APK_KEY}} /tmp/apk.rsa"
       - "docker compose exec -w /w -u pkg alpine /tmp/{{.PKG}}-{{.VERSION}}/usr/bin/localpkg apk --name {{.PKG}} --version {{.VERSION}} --key /tmp/apk.rsa --zip ."
     preconditions:
       - sh: "test -n '{{.APK_KEY}}'"
