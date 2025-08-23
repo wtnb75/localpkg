@@ -1,0 +1,7 @@
+*
+!localpkg
+!requirements*.txt
+!setup.py
+!setup.cfg
+!LICENSE
+!README.md
