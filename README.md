@@ -25,16 +25,18 @@ Main features:
 - (archlinux)
     - `curl -LO https://wtnb75.github.io/localpkg/pkg/localpkg-0.0.1-1-x86_64.pkg.tar.zst`
     - `pacman -U ./localpkg-0.0.1-1-x86_64.pkg.tar.zst`
+- (whalebrew)
+    - `whalebrew install ghcr.io/wtnb75/localpkg`
 
 ## Usage
 
 - create tarball
-    - localpkg tar --name (pkgname) --version (version) -- (pip arguments)
+    - `localpkg tar --name (pkgname) --version (version) -- (pip arguments)`
 - create .apk
-    - localpkg apk --name (pkgname) --version (version) --key (private-keyfile) -- (pip arguments)
+    - `localpkg apk --name (pkgname) --version (version) --key (private-keyfile) -- (pip arguments)`
 - create .deb
-    - localpkg deb --name (pkgname) --version (version) -- (pip arguments)
+    - `localpkg deb --name (pkgname) --version (version) -- (pip arguments)`
 - create .rpm
-    - localpkg rpm --name (pkgname) --version (version) -- (pip arguments)
+    - `localpkg rpm --name (pkgname) --version (version) -- (pip arguments)`
 - create pacman
-    - localpkg pacman --name (pkgname) --version (version) -- (pip arguments)
+    - `localpkg pacman --name (pkgname) --version (version) -- (pip arguments)`
