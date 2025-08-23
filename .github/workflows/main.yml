@@ -58,10 +58,10 @@ jobs:
     - name: deploy pages
       uses: actions/deploy-pages@v4
       id: deployment
-#    - uses: wtnb75/actions/docker@main
-#      with:
-#        push: 'true'
-#        context: .
-#        username: ${{ github.actor }}
-#        password: ${{ github.token }}
-#        image-version: ${{ github.ref_name }}
+    - uses: wtnb75/actions/docker@main
+      with:
+        push: 'true'
+        context: .
+        username: ${{ github.actor }}
+        password: ${{ github.token }}
+        image-version: ${{ github.ref_name }}

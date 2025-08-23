@@ -1,0 +1,5 @@
+*
+!localpkg
+!requirements*.txt
+!setup.py
+!setup.cfg
