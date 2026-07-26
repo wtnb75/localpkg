@@ -1,7 +1,6 @@
 *
 !localpkg
-!requirements*.txt
-!setup.py
-!setup.cfg
+!pyproject.toml
+!uv.lock
 !LICENSE
 !README.md

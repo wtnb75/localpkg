@@ -5,39 +5,27 @@ on:
     branches-ignore: [main, gh-pages]
   workflow_dispatch:
 
-#permissions:
-#  packages: write
-#  id-token: write
-
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@master
-    - uses: actions/cache@v4
-      with:
-        path: _cache
-        key: ${{ runner.os }}-pip-${{ github.sha }}
-        restore-keys: ${{ runner.os }}-pip-
-    - uses: wtnb75/actions/python@main
-      with:
-        pipinstall: "-r requirements.txt"
-    - uses: wtnb75/actions/flake8@main
-    - uses: wtnb75/actions/pytest@main
-    - uses: wtnb75/actions/wheel@main
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+    - uses: wtnb75/actions/python@9789197715f5a6b54a25832ce27193be50662266 # v1.0.4
+    - uses: wtnb75/actions/ruff@9789197715f5a6b54a25832ce27193be50662266 # v1.0.4
+    - uses: wtnb75/actions/pytest@9789197715f5a6b54a25832ce27193be50662266 # v1.0.4
+    - uses: wtnb75/actions/wheel@9789197715f5a6b54a25832ce27193be50662266 # v1.0.4
     - id: pdoc
-      uses: wtnb75/actions/pdoc@main
+      uses: wtnb75/actions/pdoc@9789197715f5a6b54a25832ce27193be50662266 # v1.0.4
       with:
         output-dir: docs
         module: localpkg
+        other-options: --docformat google
     - name: Install Task
-      uses: arduino/setup-task@v2
+      uses: arduino/setup-task@b91d5d2c96a56797b48ac1e0e89220bf64044611 # v2.0.0
     - shell: bash
       run: |
-        pip uninstall -r requirements.txt -r requirements-dev.txt -y
-        python -m venv .venv
+        uv sync --no-dev
         source .venv/bin/activate
-        pip install -r requirements.txt
         task prepare
         task APK_KEY=tmp.rsa pkg:apk:key
         task APK_KEY=tmp.rsa pkg:all
@@ -48,11 +36,11 @@ jobs:
       run: |
         pip install dirindex
         dirindex make --template apache --hide index.html --recursive pkg
-    - uses: wtnb75/actions/merge-pages@main
+    - uses: wtnb75/actions/merge-pages@9789197715f5a6b54a25832ce27193be50662266 # v1.0.4
       with:
         dirs: "cover docs pkg"
         #pydist: dist
-    - uses: wtnb75/actions/docker@main
+    - uses: wtnb75/actions/docker@9789197715f5a6b54a25832ce27193be50662266 # v1.0.4
       with:
         push: 'true'
         context: .

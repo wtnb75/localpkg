@@ -1,1 +1,16 @@
 line-length = 120
+
+[lint]
+# PLW1510: every flagged `subprocess.run(...)` call either immediately calls
+# `.check_returncode()` on the result (equivalent to `check=True`, just
+# written explicitly a statement later) or, in the abuild case, only checks
+# the return code conditionally after inspecting produced files -- a
+# deliberate "don't fail if the build artifact exists despite a non-zero
+# apk build exit" pattern. Forcing `check=True` everywhere would silently
+# change that one call site's behavior. BLE001/S110: the two blind
+# `except Exception` sites are deliberate best-effort fallbacks (skip a file
+# that can't be read as text; ignore a parent-directory rmdir that fails
+# because it isn't actually empty yet) with no distinct exception type to
+# narrow to. Left as broad ignores rather than a behavioral redesign, out of
+# scope for this packaging migration.
+ignore = ["PLW1510", "BLE001", "S110"]

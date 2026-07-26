@@ -1,7 +1,6 @@
 FROM python:3-alpine AS build
 COPY ./ /app
-RUN --mount=type=cache,target=/root/.cache cd /app && pip install build && python -m build -w
-RUN cd /app/dist && pip wheel -r ../requirements.txt
+RUN --mount=type=cache,target=/root/.cache cd /app && pip wheel -w dist .
 
 FROM python:3-alpine
 ENV PYTHONDONTWRITEBYTECODE=1

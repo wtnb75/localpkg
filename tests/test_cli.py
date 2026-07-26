@@ -1,5 +1,7 @@
 import unittest
+
 from click.testing import CliRunner
+
 from localpkg.main import cli
 
 
