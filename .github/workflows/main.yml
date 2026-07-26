@@ -15,30 +15,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-    - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-      with:
-        path: _cache
-        key: ${{ runner.os }}-pip-${{ github.sha }}
-        restore-keys: ${{ runner.os }}-pip-
-    - uses: wtnb75/actions/python@c1711251ea69e3e6d68db7a9fa019d79b497f70c # v1.0.3
-      with:
-        pipinstall: "-r requirements.txt"
-    - uses: wtnb75/actions/flake8@c1711251ea69e3e6d68db7a9fa019d79b497f70c # v1.0.3
-    - uses: wtnb75/actions/pytest@c1711251ea69e3e6d68db7a9fa019d79b497f70c # v1.0.3
-    - uses: wtnb75/actions/wheel@c1711251ea69e3e6d68db7a9fa019d79b497f70c # v1.0.3
+    - uses: wtnb75/actions/python@9789197715f5a6b54a25832ce27193be50662266 # v1.0.4
+    - uses: wtnb75/actions/ruff@9789197715f5a6b54a25832ce27193be50662266 # v1.0.4
+    - uses: wtnb75/actions/pytest@9789197715f5a6b54a25832ce27193be50662266 # v1.0.4
+    - uses: wtnb75/actions/wheel@9789197715f5a6b54a25832ce27193be50662266 # v1.0.4
     - id: pdoc
-      uses: wtnb75/actions/pdoc@c1711251ea69e3e6d68db7a9fa019d79b497f70c # v1.0.3
+      uses: wtnb75/actions/pdoc@9789197715f5a6b54a25832ce27193be50662266 # v1.0.4
       with:
         output-dir: docs
         module: localpkg
+        other-options: --docformat google
     - name: Install Task
       uses: arduino/setup-task@c0bc642852239c2689f73f4ea6459c29405f3c52 # v3.0.0
     - shell: bash
       run: |
-        pip uninstall -r requirements.txt -r requirements-dev.txt -y
-        python -m venv .venv
+        uv sync --no-dev
         source .venv/bin/activate
-        pip install -r requirements.txt
         task prepare
         task APK_KEY=tmp.rsa pkg:apk:key
         task APK_KEY=tmp.rsa pkg:all
@@ -49,7 +41,7 @@ jobs:
       run: |
         pip install dirindex
         dirindex make --template apache --hide index.html --recursive pkg
-    - uses: wtnb75/actions/merge-pages@c1711251ea69e3e6d68db7a9fa019d79b497f70c # v1.0.3
+    - uses: wtnb75/actions/merge-pages@9789197715f5a6b54a25832ce27193be50662266 # v1.0.4
       with:
         dirs: "cover docs pkg"
         #pydist: dist
@@ -58,7 +50,7 @@ jobs:
     - name: deploy pages
       uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5.0.0
       id: deployment
-    - uses: wtnb75/actions/docker@c1711251ea69e3e6d68db7a9fa019d79b497f70c # v1.0.3
+    - uses: wtnb75/actions/docker@9789197715f5a6b54a25832ce27193be50662266 # v1.0.4
       with:
         push: 'true'
         context: .

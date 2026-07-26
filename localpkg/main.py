@@ -1,12 +1,14 @@
-import os
-import sys
-import click
 import functools
-import tempfile
-import subprocess
+import os
 import shutil
-from pathlib import Path
+import subprocess
+import sys
+import tempfile
 from logging import getLogger
+from pathlib import Path
+
+import click
+
 from .version import VERSION
 
 _log = getLogger(__name__)
